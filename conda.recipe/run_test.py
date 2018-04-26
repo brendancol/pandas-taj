@@ -1,0 +1,2 @@
+import taj
+taj.test()
