@@ -1,0 +1,30 @@
+"meta": {
+    "tableType": {{ tableType }} ,
+    "style" : {
+        "colors": {
+            "bg": {{ defaults.color['bg'] }} ,
+            "fg": {{ defaults.color['fg'] }}
+        }
+    },
+    "index": {
+        "type": {{ index.type }} ,
+        "name": {{ index.name }} ,
+        "levels": {{ index.levels }}
+    },
+    "columns": {
+        "type": {{ columns.type }} ,
+        "name": {{ columns.name }} ,
+        "levels": {{ columns.levels }}
+        "bins": {
+            {% for col in columns %}
+            {{ col }}: {
+                "edges": {{ col.bins['edges'] }},
+                "colors": {
+                    "bg": {{ col.bins['color']['bg'] }} ,
+                    "fg": {{ col.bins['color']['fg'] }} ,
+                }
+            }
+            {% endfor %}
+        }
+    },
+}
