@@ -348,7 +348,7 @@ import types as _types
 def _autoprop(cls):
     for k, v in cls.__dict__.items():
         if k.startswith('_'): continue
-        if k in ['linear_palette', 'magma', 'inferno', 'plasma', 'viridis', 'cividis', 'grey', 'gray']:
+        if k in ['complements', 'linear_palette', 'magma', 'inferno', 'plasma', 'viridis', 'cividis', 'grey', 'gray']:
             continue
         setattr(cls, k, property(v))
     return cls
@@ -1327,6 +1327,20 @@ class _Palettes(_types.ModuleType):
         '''
         return self.linear_palette(self.Greys256, n)
 
+    def complements(self, colors):
+        """
+        complements of a list of hex colors
+        """
+        out = []
+        for col in colors:
+            assert col[0] == '#'
+            _rgb = _hex_to_rgb(col)
+            _rgbi = _complement(*_rgb)
+            _coli = _rgb_to_hex(_rgbi)
+            out.append(_coli)
+        return out
+
+
 # # need to explicitly transfer the docstring for Sphinx docs to build correctly
 # _mod = _PalettesModule(str('bokeh.palettes'))
 # _mod.__doc__ = __doc__
@@ -1337,3 +1351,26 @@ class _Palettes(_types.ModuleType):
 palettes = _Palettes(str('taj.palettes'))
 palettes.__all__ = dir(palettes)
 del _autoprop, _sys, _types
+
+
+def _complement(r, g, b):
+    k = _hilo(r, g, b)
+    return tuple(k - u for u in (r, g, b))
+
+
+# Sum of the min & max of (a, b, c)
+def _hilo(a, b, c):
+    if c < b: b, c = c, b
+    if b < a: a, b = b, a
+    if c < b: b, c = c, b
+    return a + c
+
+
+def _hex_to_rgb(value):
+    value = value.lstrip('#')
+    lv = len(value)
+    return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
+
+
+def _rgb_to_hex(rgb):
+    return '#%02x%02x%02x' % rgb

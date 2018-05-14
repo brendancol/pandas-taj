@@ -25,11 +25,22 @@ iris = read_csv(path.join(fixtures, 'iris.csv'))
 
 
 def assert_standard_props(result_json):
+    assert 'index' in result_json.keys()
+    assert 'columns' in result_json.keys()
     assert 'data' in result_json.keys()
     assert 'meta' in result_json.keys()
+
     meta = result_json['meta']
     assert 'tableType' in meta
-    # assert 'schema' in result_json.keys()
+
+    assert 'colors' in meta
+    assert all(k in meta['colors'] for k in ['bg', 'fg'])
+
+    assert 'index' in meta
+    assert all(k in meta['index'] for k in ['type', 'name'])
+
+    assert 'columns' in meta
+    assert all(k in meta['columns'] for k in ['type', 'name', 'bins'])
 
 
 def test_simple_df_to_json():
@@ -90,6 +101,6 @@ def test_binning_multiindex():
     assert_standard_props(dt)
 
     meta_cols = dt['meta'].get('columns')
-    assert ('sepal_length','mean') in meta_cols['bins']
-    assert ('petal_length','min') in meta_cols['bins']
-    assert ('petal_length','max') in meta_cols['bins']
+    assert 'sepal_length|mean' in meta_cols['bins']
+    assert 'petal_length|min' in meta_cols['bins']
+    assert 'petal_length|max' in meta_cols['bins']

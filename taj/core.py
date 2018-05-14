@@ -27,7 +27,7 @@ def df_to_json(df, bins=None):
 
     content = df.to_json(orient='split')
 
-    meta = metaSection(get_tableType(df))
+    meta = metaSection(df)
 
     _bins = do_bins(df, bins)
     # meta['columns'] = _bins
@@ -57,50 +57,18 @@ def do_bins(df, bins=None):
         slices = METHODS[method](df, col, mt['count'])
         _col['colors'] = get_colors(slices, mt['palette'])
         _col['edges'] = slices
+        if isinstance(col, (tuple, list)):
+            col = "|".join(col)
         _cols[col] = _col
     return _cols
-
-
-def get_tableType(df):
-    # TODO: check column and row indexes (objects) to see whether Multi or Simple
-    _type = 'Simple'
-    if isinstance(df.index, MultiIndex) or isinstance(df.columns, MultiIndex):
-        _type = 'MultiIndex'
-    return _type
-
-
-def get_indexMeta(df):
-    mt = {}
-    if isinstance(df.index, MultiIndex):
-        _type = 'MultiIndex'
-        _name = df.index.names
-    else:
-        _type = 'Simple'
-        _name = df.index.name
-    mt['type'] = _type
-    mt['name'] = _name
-    return mt
-
-
-def get_columnsMeta(df):
-    mt = {}
-    if isinstance(df.columns, MultiIndex):
-        _type = 'MultiIndex'
-        _name = df.columns.names
-    else:
-        _type = 'Simple'
-        _name = df.columns.name
-    mt['type'] = _type
-    mt['name'] = _name
-    return mt
 
 
 def _interval(df, column, bins):
     include_lowest = True
     right = True
     retbins = True
-    out,_bins = pandas.cut(df[column], bins=bins, retbins=retbins,
-                           include_lowest=include_lowest, right=True)
+    out, _bins = pandas.cut(df[column], bins=bins, retbins=retbins,
+                            include_lowest=include_lowest, right=right)
     limits = list(out.cat.categories.left)
     limits.append(out.cat.categories.right[-1])
     return limits
@@ -108,7 +76,7 @@ def _interval(df, column, bins):
 
 def _quantile(df, column, bins):
     retbins = True
-    out,_bins = pandas.qcut(df[column], q=bins, retbins=retbins)
+    out, _bins = pandas.qcut(df[column], q=bins, retbins=retbins)
     limits = list(out.cat.categories.left)
     limits.append(out.cat.categories.right[-1])
     return limits
@@ -119,15 +87,21 @@ METHODS = {'quantile': _quantile,
 
 
 def get_colors(bins, palette):
+    colors = {}
     n = len(bins) - 1
     _all = palettes.all_palettes
     if palette not in _all:
         palette = 'Greens'
     palette = _all[palette]
     if n in palette:
-        colors = palette[n]
+        _bg = palette[n]
     else:
         m = max(palette.keys())
-        colors = palette[m]
-        colors = palettes.linear_palette(colors, n)
+        _bg = palette[m]
+        _bg = palettes.linear_palette(_bg, n)
+
+    _fg = palettes.complements(_bg)
+
+    colors['bg'] = _bg
+    colors['fg'] = _fg
     return colors
