@@ -1,31 +1,25 @@
 import pandas
-from pandas import MultiIndex
 
 from .palettes import palettes
 from .meta import metaSection, to_json
 
 
-def df_to_json(df, bins=None):
+def df_to_json(df, bins=None, json_extras=dict(orient='split')):
     """
     Return a JSON string from 'df' table
 
     Input:
      - df   : pandas.DataFrame
      - bins : dictionary (see `helper_funcs.bins`)
+     - json_extras : dictionary (extra args to forward to to_json function)
 
     Output:
-     - jsons : string
-        String containing json structure from df.to_json(orient='split')
-        plus a "meta" section describing visualization properties to table.
+     - json : string
+        String containing json structure from df.to_json(**json_extras)
+        plus a "meta" section describing visualization properties.
     """
-    # df := [my_col, my_col2, another_col]
-    #
-    # bins := {
-    #   mycol={'method':'quantile', perc=[0.1,0.25,0.5,0.9], palette='viridis'},
-    #   mycol2={'method':'equal-interval', count=7, palette='greens'}
-    # }
 
-    content = df.to_json(orient='split')
+    content = df.to_json(**json_extras)
 
     meta = metaSection(df)
 
@@ -53,7 +47,7 @@ def do_bins(df, bins=None):
         _col = {}
         method = mt['method']
         assert method in METHODS, ("Expected one of {}, got '{}' instead"
-                                    .format(list(METHODS.keys()), method))
+                                   .format(list(METHODS.keys()), method))
         slices = METHODS[method](df, col, mt['count'])
         _col['colors'] = get_colors(slices, mt['palette'])
         _col['edges'] = slices
