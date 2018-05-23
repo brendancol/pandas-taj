@@ -28,7 +28,8 @@ def df_to_json(df, bins=None, filterFields=None, extras={}):
     # }
 
     json_args = dict(orient='split')
-    content = df.to_json(**json_args.update(extras))
+    json_args.update(extras)
+    content = df.to_json(**json_args)
 
     meta = metaSection(df)
     if filterFields:
