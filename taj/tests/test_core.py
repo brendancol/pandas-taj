@@ -11,17 +11,6 @@ fixtures = path.join(here, 'fixtures')
 
 iris = read_csv(path.join(fixtures, 'iris.csv'))
 
-# Getting iris dataset straight from sklearn:
-#
-# import numpy as np
-# import pandas as pd
-# from sklearn.datasets import load_iris
-# data = load_iris()
-# feat = data.data
-# spec = data.target_names[data.target]
-# df = pd.DataFrame(np.column_stack((feat, spec)),
-#      columns = ['_'.join(s.split()[:2]) for s in data.feature_names]+['species'])
-# iris = df
 
 
 def assert_standard_props(result_json):
@@ -104,3 +93,36 @@ def test_binning_multiindex():
     assert 'sepal_length|mean' in meta_cols['bins']
     assert 'petal_length|min' in meta_cols['bins']
     assert 'petal_length|max' in meta_cols['bins']
+
+
+def test_filter_simple():
+    global iris
+
+    filterFields = ['sepal_length', 'petal_length']
+
+    output_json = df_to_json(iris, filterFields=filterFields)
+
+    assert output_json
+
+    df = loads(output_json)
+    m = df['meta']
+    assert m['filterFields'] == filterFields
+
+
+def test_filter_multiindex():
+    global iris
+    grouped = iris.groupby('species')
+    agg = grouped.agg(['min', 'max', 'mean'])
+
+    filterFields = [('sepal_length','mean'), ('petal_length','min')]
+
+    output_json = df_to_json(agg, filterFields=filterFields)
+    assert output_json
+
+    df = loads(output_json)
+    m = df['meta']
+    print(m)
+    fields_from_JSON = []
+    for f in m['filterFields']:
+        fields_from_JSON.append(tuple(f.split("|")) if "|" in f else f)
+    assert fields_from_JSON == filterFields
