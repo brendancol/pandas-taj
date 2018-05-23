@@ -1,27 +1,44 @@
 import pandas
+from pandas import MultiIndex
 
 from .palettes import palettes
 from .meta import metaSection, to_json
 
 
-def df_to_json(df, bins=None, json_extras=dict(orient='split')):
+def df_to_json(df, bins=None, filterFields=None, extras={}):
     """
     Return a JSON string from 'df' table
 
     Input:
-     - df   : pandas.DataFrame
+     - df : pandas.DataFrame
      - bins : dictionary (see `helper_funcs.bins`)
-     - json_extras : dictionary (extra args to forward to to_json function)
+     - filterFields : list with column names
+     - extras : args dict which are forwarded to pd.to_json
 
     Output:
      - json : string
-        String containing json structure from df.to_json(**json_extras)
-        plus a "meta" section describing visualization properties.
+        String containing json structure from df.to_json(orient='split')
+        plus a "meta" section describing visualization properties to table.
     """
+    # df := [my_col, my_col2, another_col]
+    #
+    # bins := {
+    #   mycol={'method':'quantile', perc=[0.1,0.25,0.5,0.9], palette='viridis'},
+    #   mycol2={'method':'equal-interval', count=7, palette='greens'}
+    # }
 
-    content = df.to_json(**json_extras)
+    json_args = dict(orient='split')
+    content = df.to_json(**json_args.update(extras))
 
     meta = metaSection(df)
+    if filterFields:
+        _filterFields = []
+        for field in filterFields:
+            if isinstance(field, (tuple, list)):
+                _filterFields.append("|".join(field))
+            else:
+                _filterFields.append(field)
+        meta['filterFields'] = _filterFields
 
     _bins = do_bins(df, bins)
     # meta['columns'] = _bins
@@ -47,7 +64,7 @@ def do_bins(df, bins=None):
         _col = {}
         method = mt['method']
         assert method in METHODS, ("Expected one of {}, got '{}' instead"
-                                   .format(list(METHODS.keys()), method))
+                                    .format(list(METHODS.keys()), method))
         slices = METHODS[method](df, col, mt['count'])
         _col['colors'] = get_colors(slices, mt['palette'])
         _col['edges'] = slices
