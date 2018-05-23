@@ -12,7 +12,6 @@ fixtures = path.join(here, 'fixtures')
 iris = read_csv(path.join(fixtures, 'iris.csv'))
 
 
-
 def assert_standard_props(result_json):
     assert 'index' in result_json.keys()
     assert 'columns' in result_json.keys()
