@@ -9,9 +9,37 @@ def df_to_json(df, bins=None, filterFields=None, extras={}):
     """
     Return a JSON string from 'df' table
 
+    The 'bins' parameter is a dictionary indicating how a column or set of columns
+    should be binned:
+    ```
+    bins = {'method': 'quantile' or 'interval',
+            'count': number of intervals,
+            'intervals': list of values to define bins ranges,
+            'palette': name of a color palette from `taj.palettes`}
+    ```
+
+    The 'method' Methods the can be used are 'quantile' or
+    'interval' to indicate sample amount defined bins or equaly spaced bins,
+    respectively. After 'method' we have to define also the number of intervals
+    with 'count' or, otherwise, the 'intervals' themselves that we want our data/column
+    to be split. If both are indicated, 'count' has precedence over 'intervals'.
+
+    Depending on the 'method' in use, values in 'intervals' will have different
+    meaning: if 'method' == 'interval', 'intervals' should indicated the values
+    to limit the bins; if 'method' == 'quantile', 'intervals' values are considered
+    to be the size of the sample to consider when defining the bins; this will
+    be done automatically by `taj`. Quantile 'intervals' range from `0` to `1`.
+
+    The 'palette' associated value is the name of a color palette from
+    `taj.palettes`; the method `taj.palettes.all_palettes` list all possibilities.
+
     Input:
      - df : pandas.DataFrame
-     - bins : dictionary (see `helper_funcs.bins`)
+     - bins : dictionary
+        expected structure: {'method': 'quantile' or 'interval',
+                             'count': integer,
+                             'intervals': list of values,
+                             'palette': string }
      - filterFields : list with column names
      - extras : args dict which are forwarded to pd.to_json
 
@@ -66,7 +94,13 @@ def do_bins(df, bins=None):
         method = mt['method']
         assert method in METHODS, ("Expected one of {}, got '{}' instead"
                                     .format(list(METHODS.keys()), method))
-        slices = METHODS[method](df, col, mt['count'])
+        if 'count' in mt and int(mt['count']) > 0:
+            _bins = int(mt['count'])
+        elif 'intervals' in mt and len(mt['intervals']) > 0:
+            _bins = [float(v) for v in mt['intervals']]
+        else:
+            assert 'intervals' in mt or 'count' in mt
+        slices = METHODS[method](df, col, _bins)
         _col['colors'] = get_colors(slices, mt['palette'])
         _col['edges'] = slices
         if isinstance(col, (tuple, list)):
